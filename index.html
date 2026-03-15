@@ -131,4 +131,6 @@ function NextButton({ label = "Next", onClick }) {
     return (
     <button
         onClick = {onClick}
-        
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style = {{
