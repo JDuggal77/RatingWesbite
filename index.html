@@ -134,3 +134,11 @@ function NextButton({ label = "Next", onClick }) {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style = {{
+        ...STOPSTART,
+        transform hovered ? "translateY(-1px)" : "translateY(0)",
+        boxShadow: hovered
+        ? "0 6px 24px rgba(167,139,250,0.5)"
+        : STOPSTART.boxShadow,
+    }}
+    >
+        
