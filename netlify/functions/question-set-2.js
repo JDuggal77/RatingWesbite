@@ -28,8 +28,7 @@ fields.
 
 const { MongoClient, ObjectId } = require("mongodb");
 
-const uri = "mongodb+srv://whager_db_user:N1tGbZrnsvKYgvrn@rating-interface-websit.zxw2ga4.mongodb.net/?appName=Rating-Interface-Website";
-const client = new MongoClient(uri);
+const uri = process.env.MONGODB_URI;
 const collection = () => client.db("rating-interface").collection("question-set-2")
 
 let isConnected = false;
