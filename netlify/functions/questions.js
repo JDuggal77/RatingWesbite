@@ -1,12 +1,12 @@
 /***************************************************************************
-FILE: question-set-1.js
+FILE: questions.js
 
-This is a RESTful endpoint for logging the responses for the first set of 
-questions.
+This is a RESTful endpoint for logging question responses.
+
 It supports GET, POST, and DELETE.
 
 The POST should be a JSON object containing fields:
-USER_ID : int
+USER_ID : String // should be the corresponding Mongo native _id from pre-survey
 initial_statement: String
 initial_rating: 4
 initial_reasoning: String
@@ -27,9 +27,9 @@ fields.
 ***************************************************************************/
 const { MongoClient, ObjectId } = require("mongodb");
 
-const uri = process.env.MONGODB_URI;
+const uri =  process.env.MONGODB_URI;
 const client = new MongoClient(uri);
-const collection = () => client.db("rating-interface").collection("question-set-1")
+const collection = () => client.db("rating-interface").collection("questions")
 
 let isConnected = false;
 
