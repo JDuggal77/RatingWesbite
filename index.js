@@ -47,12 +47,6 @@ const AGE = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55–64", 
 const GENDER = ["Male", "Female", "Non-binary", "Prefer not to say", "Other"];
 const EDUCATION = ["High School / GED", "Some College", "Associate's Degree", "Bachelor's Degree", "Master's Degree", "Doctorate", "Other"];
 
-const PAGE = {
-    minHeight: "100vh",
-    background: "linear-gradient(135deg, #eef2ff 0%, #fdf4ff 50%, #e0e7ff 100%)",
-    display: "flex",
-    flexDirection: "column",
-}
 
 const PAGE = {
     minHeight: "100vh",
@@ -62,7 +56,7 @@ const PAGE = {
     alignItems: "center",
     justifyContent: "center",
     padding: "40px 20px 100px",
-    fontFamily: "'Segoe UI', system-ui, san-serif",
+    fontFamily: "'Segoe UI', system-ui, sans-serif",
 };
 
 const CARD = {
@@ -135,7 +129,7 @@ function NextButton({ label = "Next", onClick }) {
         onMouseLeave={() => setHovered(false)}
         style = {{
         ...STOPSTART,
-        transform hovered ? "translateY(-1px)" : "translateY(0)",
+        transform: hovered ? "translateY(-1px)" : "translateY(0)",
         boxShadow: hovered
         ? "0 6px 24px rgba(167,139,250,0.5)"
         : STOPSTART.boxShadow,
