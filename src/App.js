@@ -1,25 +1,835 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState, useRef, useEffect } from "react";
 
-function App() {
+
+const LIKERT_LABELS = {
+  1: "Strongly Disagree",
+  2: "Disagree",
+  3: "Somewhat Disagree",
+  4: "Neither Agree nor Disagree",
+  5: "Somewhat Agree",
+  6: "Agree",
+  7: "Strongly Agree",
+};
+
+const POST_SURVEY_QUESTIONS = [
+  {
+    question: "How engaged did you feel during the experiment?",
+    leftLabel: "Not at all",
+    midLabel: "Neutral",
+    rightLabel: "Very much",
+  },
+  {
+    question: "How confident are you about your responses?",
+    leftLabel: "Not at all",
+    midLabel: "Neutral",
+    rightLabel: "Very much",
+  },
+];
+
+const LLM_DATA = [
+  {
+    statement: "The United States does not produce the most oil in the world.",
+    responseA:
+      "According to recent data from the U.S. Energy Information Administration, the United States is actually the world's largest oil producer, surpassing both Russia and Saudi Arabia in recent years. This has been driven by advances in shale oil extraction technology.",
+    responseB: "The statement is incorrect and this is response B",
+    thinkingB: "I need to evaluate....",
+  },
+  {
+    statement: "Climate change is primarily caused by human activity.",
+    responseA:
+      "There is overwhelming scientific consensus that human activities, particularly burning fossil fuels and deforestation, are the primary drivers of modern climate change.",
+    responseB:
+      "While natural factors do influence climate, the current rate of warming aligns strongly with industrial emissions data.",
+    thinkingB: "I need to consider multiple perspectives here....",
+  },
+  {
+    statement: "Vaccines are safe and effective for most people.",
+    responseA:
+      "Decades of clinical research confirm that vaccines approved for public use are both safe and effective. Serious adverse effects are rare and monitored through robust surveillance systems.",
+    responseB:
+      "Vaccines undergo rigorous trials before approval. The benefit-risk profile for approved vaccines is strongly positive for the general population.",
+    thinkingB: "Let me evaluate the evidence carefully....",
+  },
+];
+
+
+
+const AGE = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55–64", "65+"];
+const GENDER = ["Male", "Female", "Non-binary", "Prefer not to say", "Other"];
+const EDUCATION = [
+  "High School / GED",
+  "Some College",
+  "Associate's Degree",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "Doctorate",
+  "Other",
+];
+
+
+const PAGE = {
+  minHeight: "100vh",
+  background: "#f0f0f0",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "40px 20px",
+  fontFamily: "Arial, sans-serif",
+};
+
+const CARD = {
+  background: "#fff",
+  borderRadius: "8px",
+  padding: "30px",
+  width: "100%",
+  maxWidth: "700px",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+  boxSizing: "border-box",
+};
+
+const STOPSTART = {
+  background: "#6c63ff",
+  color: "#fff",
+  border: "none",
+  borderRadius: "6px",
+  padding: "12px 32px",
+  fontSize: "15px",
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
+};
+
+const LABEL = {
+  display: "block",
+  fontSize: "14px",
+  fontWeight: "600",
+  color: "#333",
+  marginBottom: "6px",
+};
+
+const SELECT = {
+  width: "100%",
+  padding: "10px 14px",
+  fontSize: "14px",
+  border: "1px solid #ccc",
+  borderRadius: "6px",
+  background: "#fff",
+  cursor: "pointer",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+const INPUT = {
+  width: "100%",
+  padding: "10px 14px",
+  fontSize: "14px",
+  border: "1px solid #ccc",
+  borderRadius: "6px",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+
+function Arrow() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
+function NextButton({ label = "Next", onClick }) {
+  return (
+    <button onClick={onClick} style={STOPSTART}>
+      {label} <Arrow />
+    </button>
+  );
+}
+
+function PageHead({ title, subtitle, current, total }) {
+  return (
+    <div style={{ textAlign: "center", marginBottom: "24px", maxWidth: "900px", width: "100%" }}>
+      <h1 style={{ fontSize: "40px", color: "#111", margin: "0 0 8px" }}>{title}</h1>
+      <p style={{ color: "#555", margin: "0 0 8px" }}>{subtitle}</p>
+      {current !== undefined && total !== undefined && (
+        <p style={{ color: "#666", margin: 0 }}>
+          Question {current + 1} of {total}
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      )}
     </div>
   );
 }
 
-export default App;
+function LikertScale({ value, onChange, leftLabel, midLabel, rightLabel }) {
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "8px",
+          marginBottom: "8px",
+        }}
+      >
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+          const selected = value === n;
+          return (
+            <div
+              key={n}
+              onClick={() => onChange(n)}
+              style={{
+                width: "50px",
+                height: "50px",
+                borderRadius: "50%",
+                border: selected ? "none" : "2px solid #ccc",
+                background: selected ? "#6c63ff" : "#fff",
+                color: selected ? "#fff" : "#333",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              {n}
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: "12px",
+          color: "#666",
+          textAlign: "center",
+        }}
+      >
+        <span style={{ width: "50px", whiteSpace: "pre-line" }}>{leftLabel}</span>
+        {midLabel ? (
+          <span style={{ width: "50px", whiteSpace: "pre-line" }}>{midLabel}</span>
+        ) : (
+          <span style={{ flex: 1 }} />
+        )}
+        <span style={{ width: "50px", whiteSpace: "pre-line" }}>{rightLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+
+
+function PreSurveyPage({ onNext }) {
+  const [form, setForm] = useState({
+    ageRange: "",
+    gender: "",
+    education: "",
+    state: "",
+  });
+
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  return (
+    <div style={PAGE}>
+      <div style={{ textAlign: "center", marginBottom: "24px", maxWidth: "700px" }}>
+        <h1 style={{ fontSize: "26px", color: "#111", margin: "0 0 8px" }}>
+          Pre-Survey (demographic + personality information)
+        </h1>
+        <p style={{ color: "#555" }}>
+          Please provide some demographic information before we begin.
+        </p>
+      </div>
+
+      <div style={CARD}>
+        <h2 style={{ fontSize: "18px", margin: "0 0 20px" }}>Demographic Information</h2>
+
+        <div style={{ marginBottom: "16px" }}>
+          <label style={LABEL}>Age Range</label>
+          <select name="ageRange" value={form.ageRange} onChange={handleChange} style={SELECT}>
+            <option value="" disabled>
+              Select age range
+            </option>
+            {AGE.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <label style={LABEL}>Gender</label>
+          <select name="gender" value={form.gender} onChange={handleChange} style={SELECT}>
+            <option value="" disabled>
+              Select gender
+            </option>
+            {GENDER.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <label style={LABEL}>Highest Level of Education</label>
+          <select
+            name="education"
+            value={form.education}
+            onChange={handleChange}
+            style={SELECT}
+          >
+            <option value="" disabled>
+              Select education level
+            </option>
+            {EDUCATION.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: "24px" }}>
+          <label style={LABEL}>State</label>
+          <input
+            type="text"
+            name="state"
+            value={form.state}
+            onChange={handleChange}
+            placeholder="Enter your state"
+            style={INPUT}
+          />
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <NextButton label="Start Survey" onClick={onNext} />
+        </div>
+      </div>
+
+      
+    </div>
+  );
+}
+
+
+function ExperimentPage({ onNext }) {
+  const [current, setCurrent] = useState(0);
+  const [step, setStep] = useState("statement");
+
+  const [ratings, setRatings] = useState({});
+  const [reasonings, setReasonings] = useState({});
+  const [ratingsA, setRatingsA] = useState({});
+  const [ratingsB, setRatingsB] = useState({});
+  const [preferred, setPreferred] = useState({});
+
+  const item = LLM_DATA[current];
+
+  function handleNext() {
+    if (step === "statement") {
+      setStep("comparison");
+      return;
+    }
+
+    if (current < LLM_DATA.length - 1) {
+      setCurrent(current + 1);
+      setStep("statement");
+    } else {
+      onNext();
+    }
+  }
+
+  return (
+    <div style={PAGE}>
+      {step === "statement" && (
+        <>
+          <PageHead
+            title='"User Instruction"'
+            subtitle="Rate on a Likert scale of 1–7 how much you agree with the following statements."
+            current={current}
+            total={LLM_DATA.length}
+          />
+
+          <div style={CARD}>
+            <h2
+              style={{
+                fontSize: "22px",
+                textAlign: "center",
+                margin: "0 0 18px",
+                color: "#111827",
+                lineHeight: 1.35,
+              }}
+            >
+              {item.statement}
+            </h2>
+
+            <p
+              style={{
+                textAlign: "center",
+                fontWeight: "700",
+                fontSize: "18px",
+                color: "#4b5563",
+                margin: "0 0 22px",
+              }}
+            >
+              {ratings[current] ? LIKERT_LABELS[ratings[current]] : "Select a rating"}
+            </p>
+
+            <LikertScale
+              value={ratings[current]}
+              onChange={(val) =>
+                setRatings((prev) => ({
+                  ...prev,
+                  [current]: val,
+                }))
+              }
+              leftLabel={"Strongly\nDisagree"}
+              midLabel={"Neither\nAgree\nnor\nDisagree"}
+              rightLabel={"Strongly\nAgree"}
+            />
+
+            <div style={{ marginTop: "28px" }}>
+              <label style={LABEL}>Please explain your reasoning:</label>
+              <textarea
+                value={reasonings[current] || ""}
+                onChange={(e) =>
+                  setReasonings((prev) => ({
+                    ...prev,
+                    [current]: e.target.value,
+                  }))
+                }
+                placeholder="Character Limit 400 characters"
+                maxLength={400}
+                style={{
+                  ...INPUT,
+                  minHeight: "110px",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ marginTop: "22px", display: "flex", justifyContent: "center" }}>
+            <NextButton label="Next" onClick={handleNext} />
+          </div>
+        </>
+      )}
+
+      {step === "comparison" && (
+        <>
+          <PageHead
+            title="LLM Responses"
+            subtitle="Review the two LLM responses below and provide your ratings for each."
+            current={current}
+            total={LLM_DATA.length}
+          />
+
+          <div style={{ ...CARD, marginBottom: "18px" }}>
+            <p style={{ fontWeight: "700", margin: "0 0 8px", color: "#111827" }}>
+              Original Statement:
+            </p>
+            <p
+              style={{
+                background: "#f9fafb",
+                border: "1px solid #e5e7eb",
+                borderRadius: "12px",
+                padding: "14px",
+                margin: 0,
+                color: "#374151",
+              }}
+            >
+              {item.statement}
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "18px",
+              width: "100%",
+              maxWidth: "780px",
+              marginBottom: "18px",
+              alignItems: "stretch",
+            }}
+          >
+            <div style={{ ...CARD, flex: 1, maxWidth: "none" }}>
+              <h3 style={{ marginTop: 0, marginBottom: "12px", color: "#2563eb" }}>
+                Response A
+              </h3>
+
+              <p
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  margin: "0 0 8px",
+                  color: "#374151",
+                }}
+              >
+                LLM Response:
+              </p>
+
+              <p
+                style={{
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                  marginBottom: "18px",
+                  color: "#374151",
+                }}
+              >
+                {item.responseA}
+              </p>
+
+              <p
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  margin: "0 0 10px",
+                  color: "#111827",
+                }}
+              >
+                How persuasive is this response? (1-7)
+              </p>
+
+              <LikertScale
+                value={ratingsA[current]}
+                onChange={(val) =>
+                  setRatingsA((prev) => ({
+                    ...prev,
+                    [current]: val,
+                  }))
+                }
+                leftLabel={"Not\nPersuasive"}
+                rightLabel={"Very\nPersuasive"}
+              />
+            </div>
+
+            <div style={{ ...CARD, flex: 1, maxWidth: "none" }}>
+              <h3 style={{ marginTop: 0, marginBottom: "12px", color: "#16a34a" }}>
+                Response B
+              </h3>
+
+              <p
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  margin: "0 0 8px",
+                  color: "#374151",
+                }}
+              >
+                LLM Response:
+              </p>
+
+              <p
+                style={{
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                  marginBottom: "16px",
+                  color: "#374151",
+                }}
+              >
+                {item.responseB}
+              </p>
+
+              <p
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  margin: "0 0 6px",
+                  color: "#111827",
+                }}
+              >
+                Thinking Process:
+              </p>
+
+              <p
+                style={{
+                  background: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                  marginBottom: "16px",
+                  color: "#374151",
+                }}
+              >
+                {item.thinkingB}
+              </p>
+
+              <p
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  margin: "0 0 10px",
+                  color: "#111827",
+                }}
+              >
+                How persuasive is this response? (1-7)
+              </p>
+
+              <LikertScale
+                value={ratingsB[current]}
+                onChange={(val) =>
+                  setRatingsB((prev) => ({
+                    ...prev,
+                    [current]: val,
+                  }))
+                }
+                leftLabel={"Not\nPersuasive"}
+                rightLabel={"Very\nPersuasive"}
+              />
+            </div>
+          </div>
+
+          <div style={{ ...CARD, textAlign: "center", marginBottom: "20px" }}>
+            <h3 style={{ margin: "0 0 18px", color: "#111827" }}>
+              Which response would you choose?
+            </h3>
+
+            <div style={{ display: "flex", gap: "16px", justifyContent: "center" }}>
+              {["Response A", "Response B"].map((option) => {
+                const isA = option === "Response A";
+                const isChosen = preferred[current] === option;
+
+                return (
+                  <button
+                    key={option}
+                    onClick={() =>
+                      setPreferred((prev) => ({
+                        ...prev,
+                        [current]: option,
+                      }))
+                    }
+                    style={{
+                      padding: "14px 32px",
+                      borderRadius: "12px",
+                      border: `2px solid ${
+                        isChosen ? (isA ? "#2563eb" : "#16a34a") : "#d1d5db"
+                      }`,
+                      background: isChosen ? (isA ? "#eff6ff" : "#f0fdf4") : "#fff",
+                      color: isA ? "#2563eb" : "#16a34a",
+                      fontSize: "16px",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <NextButton
+              label={current === LLM_DATA.length - 1 ? "Continue to Post Survey" : "Next Question"}
+              onClick={handleNext}
+            />
+          </div>
+        </>
+      )}
+
+      
+    </div>
+  );
+}
+
+
+function PostSurveyPage({ onNext }) {
+  const [responses, setResponses] = useState({});
+
+  function handleComplete() {
+    onNext();
+  }
+
+  return (
+    <div style={PAGE}>
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: "28px",
+          maxWidth: "720px",
+          width: "100%",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "clamp(22px, 4vw, 34px)",
+            fontWeight: "800",
+            color: "#111827",
+            margin: "0 0 10px 0",
+            letterSpacing: "-0.5px",
+          }}
+        >
+          Post survey questions
+        </h1>
+        <p style={{ fontSize: "15px", color: "#6b7280", margin: 0 }}>
+          Please answer the following post survey questions.
+        </p>
+      </div>
+
+      <div style={{ width: "100%", maxWidth: "780px" }}>
+        {POST_SURVEY_QUESTIONS.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              ...CARD,
+              marginBottom: "26px",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                color: "#1f2937",
+                margin: "0 0 24px 0",
+              }}
+            >
+              {index + 1}. {item.question}
+            </h2>
+
+            <LikertScale
+              value={responses[index]}
+              onChange={(val) =>
+                setResponses((prev) => ({
+                  ...prev,
+                  [index]: val,
+                }))
+              }
+              leftLabel={item.leftLabel}
+              midLabel={item.midLabel}
+              rightLabel={item.rightLabel}
+            />
+          </div>
+        ))}
+
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "8px" }}>
+          <NextButton label="Complete Survey" onClick={handleComplete} />
+        </div>
+      </div>
+
+      
+    </div>
+  );
+}
+
+function ThankYouPage({ onRestart }) {
+  return (
+    <div style={PAGE}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textAlign: "center",
+          maxWidth: "900px",
+          width: "100%",
+        }}
+      >
+        <div
+          style={{
+            width: "120px",
+            height: "120px",
+            borderRadius: "999px",
+            background: "#dcfce7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "26px",
+          }}
+        >
+          <div
+            style={{
+              width: "52px",
+              height: "52px",
+              borderRadius: "999px",
+              background: "#16a34a",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "28px",
+              fontWeight: "800",
+            }}
+          >
+            ✓
+          </div>
+        </div>
+
+        <h1
+          style={{
+            fontSize: "clamp(34px, 6vw, 64px)",
+            fontWeight: "800",
+            color: "#111827",
+            margin: "0 0 18px 0",
+            letterSpacing: "-1px",
+          }}
+        >
+          Thank You!
+        </h1>
+
+        <p
+          style={{
+            fontSize: "clamp(18px, 2.4vw, 28px)",
+            color: "#4b5563",
+            margin: "0 0 34px 0",
+            lineHeight: 1.45,
+          }}
+        >
+          Your responses have been recorded. We appreciate your participation in this survey.
+        </p>
+
+        <button
+          onClick={onRestart}
+          style={{
+            ...STOPSTART,
+            padding: "18px 34px",
+            fontSize: "18px",
+            borderRadius: "16px",
+          }}
+        >
+          Start New Survey
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+export default function App() {
+  const [page, setPage] = useState(0);
+
+  return (
+    <>
+      {page === 0 && <PreSurveyPage onNext={() => setPage(1)} />}
+      {page === 1 && <ExperimentPage onNext={() => setPage(2)} />}
+      {page === 2 && <PostSurveyPage onNext={() => setPage(3)} />}
+      {page === 3 && <ThankYouPage onRestart={() => setPage(0)} />}
+    </>
+  );
+}
