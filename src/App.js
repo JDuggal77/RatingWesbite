@@ -235,13 +235,15 @@ function LikertScale({ value, onChange, leftLabel, midLabel, rightLabel }) {
   );
 }
 
-function PreSurveyPage({ onNext, onIdChange }) {
+function PreSurveyPage({ onNext, onIdChange, onProlificIdChange }) {
   const [form, setForm] = useState({
+    PROLIFIC_ID: "",
     ageRange: "",
     gender: "",
     education: "",
     state: "",
   });
+
   let id = ""
   const pre_survey_save = async () => {
     const postRes = await fetch("/.netlify/functions/pre-survey", {
@@ -263,6 +265,11 @@ function PreSurveyPage({ onNext, onIdChange }) {
     nextPage();
   };
 
+  function handlePIDChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    onProlificIdChange(e.target.value)
+  }
+
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
@@ -280,6 +287,18 @@ function PreSurveyPage({ onNext, onIdChange }) {
 
       <div style={CARD}>
         <h2 style={{ fontSize: "18px", margin: "0 0 20px" }}>Demographic Information</h2>
+
+        <div style={{ marginBottom: "24px" }}>
+          <label style={LABEL}>Prolific ID</label>
+          <input
+            type="text"
+            name="PROLIFIC_ID"
+            value={form.PROLIFIC_ID}
+            onChange={handlePIDChange}
+            placeholder="Enter your Prolific ID"
+            style={INPUT}
+          />
+        </div>
 
         <div style={{ marginBottom: "16px" }}>
           <label style={LABEL}>Age Range</label>
@@ -351,9 +370,10 @@ function PreSurveyPage({ onNext, onIdChange }) {
 }
 
 
-function ExperimentPage({ onNext, uid }) {
+function ExperimentPage({ onNext, uid, pid }) {
   const [current, setCurrent] = useState(0);
   const [step, setStep] = useState("statement");
+  const [order, setOrder] = useState(0)
 
   const [ratings, setRatings] = useState({});
   const [reasonings, setReasonings] = useState({});
@@ -362,6 +382,7 @@ function ExperimentPage({ onNext, uid }) {
   const [preferred, setPreferred] = useState({});
 
   const item = LLM_DATA[current];
+
 
   const update_item_values = async () => {
     const statement = item.statement
@@ -386,6 +407,9 @@ function ExperimentPage({ onNext, uid }) {
   const question_save = async () => {
     const form = {
       USER_ID: uid,
+      PROLIFIC_ID: pid,
+      statement: item.statement,
+      statement_order: order,
       initial_reasoning: reasonings[current],
       response_a :
           {
@@ -416,6 +440,7 @@ function ExperimentPage({ onNext, uid }) {
     if (current < LLM_DATA.length - 1) {
       await question_save()
       setCurrent(current + 1);
+      setOrder(order + 1)
       setStep("statement");
 
     } else {
@@ -729,12 +754,13 @@ function ExperimentPage({ onNext, uid }) {
 }
 
 
-function PostSurveyPage({ onNext, uid }) {
+function PostSurveyPage({ onNext, uid, pid }) {
   const [responses, setResponses] = useState({});
   
   const post_survey_save = async () => {
   const payload = {
     USER_ID: uid,
+    PROLIFIC_ID: pid,
     ...responses
   };
 
@@ -905,14 +931,15 @@ function ThankYouPage({ onRestart }) {
 
 export default function App() {
   const [page, setPage] = useState(0);
-  const [id, setId] = useState(null)
+  const [id, setId] = useState(null);
+  const [prolificID, setProlificID] = useState(null);
 
   return (
     <>
-      {page === 0 && <PreSurveyPage onNext={() => setPage(1)} onIdChange={setId} />}
-      {page === 1 && <ExperimentPage onNext={() => setPage(2)} uid={id}/>}
-      {page === 2 && <PostSurveyPage onNext={() => setPage(3)} uid={id}/>}
-      {page === 3 && <ThankYouPage onRestart={() => setPage(0)} uid={""}/>}
+      {page === 0 && <PreSurveyPage onNext={() => setPage(1)} onIdChange={setId} onProlificIdChange={setProlificID} />}
+      {page === 1 && <ExperimentPage onNext={() => setPage(2)} uid={id} pid={prolificID}/>}
+      {page === 2 && <PostSurveyPage onNext={() => setPage(3)} uid={id} pid={prolificID}/>}
+      {page === 3 && <ThankYouPage onRestart={() => setPage(0)} uid={""} pid={""}/>}
     </>
   );
 }
