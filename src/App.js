@@ -74,12 +74,14 @@ const EDUCATION = [
 const PAGE = {
   minHeight: "100vh",
   background: "#f0f0f0",
+  width: "100%",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
   padding: "40px 20px",
   fontFamily: "Arial, sans-serif",
+  boxSizing: "border-box",
 };
 
 const CARD = {
@@ -88,6 +90,7 @@ const CARD = {
   padding: "30px",
   width: "100%",
   maxWidth: "700px",
+  margin: "0 auto",
   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
   boxSizing: "border-box",
 };
