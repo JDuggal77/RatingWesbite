@@ -13,6 +13,12 @@ const LIKERT_LABELS = {
   7: "Strongly Agree",
 };
 
+const STATEMENT_POOL = [
+  "The United States does not produce the most oil in the world.",
+  "Climate change is primarily caused by human activity.”,
+  "Vaccines are safe and effective for most people.",
+];
+  
 const STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
   "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
@@ -38,32 +44,17 @@ const POST_SURVEY_QUESTIONS = [
   },
 ];
 
-const LLM_DATA = [
-  {
-    statement: "The United States does not produce the most oil in the world.",
-    responseA:
-      "",
+function pickStatements(pool, n) {
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n).map(s => ({
+    statement: s,
+    responseA: "",
     responseB: "",
     thinkingB: "[Thinking tokens, omitted to avoid API cost]",
-  },
-  {
-    statement: "Climate change is primarily caused by human activity.",
-    responseA:
-      "",
-    responseB:
-      "",
-    thinkingB: "[Thinking tokens, omitted to avoid API cost]",
-  },
-  {
-    statement: "Vaccines are safe and effective for most people.",
-    responseA:
-      "",
-    responseB:
-      "",
-    thinkingB: "[Thinking tokens, omitted to avoid API cost]",
-  },
-];
+  }));
+}
 
+const LLM_DATA = pickStatements(STATEMENT_POOL, 3);
 
 
 const AGE = ["Under 18", "18–24", "25–34", "35–44", "45–54", "55–64", "65+"];
