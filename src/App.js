@@ -13,6 +13,14 @@ const LIKERT_LABELS = {
   7: "Strongly Agree",
 };
 
+const STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
+];
+
 const POST_SURVEY_QUESTIONS = [
   {
     question: "How engaged did you feel during the experiment?",
@@ -351,17 +359,12 @@ function PreSurveyPage({ onNext, onIdChange, onProlificIdChange }) {
         </div>
 
         <div style={{ marginBottom: "24px" }}>
-          <label style={LABEL}>State</label>
-          <input
-            type="text"
-            name="state"
-            value={form.state}
-            onChange={handleChange}
-            placeholder="Enter your state"
-            style={INPUT}
-          />
-        </div>
-
+  <label style={LABEL}>State</label>
+  <select name="state" value={form.state} onChange={handleChange} style={SELECT}>
+    <option value="" disabled>Select state</option>
+    {STATES.map((o) => <option key={o} value={o}>{o}</option>)}
+  </select>
+</div>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <NextButton label="Start Survey" onClick={handleNext(pre_survey_save, onNext)} />
         </div>
@@ -538,52 +541,45 @@ function ExperimentPage({ onNext, uid, pid }) {
             total={LLM_DATA.length}
           />
 
-          <div style={{ ...CARD, marginBottom: "18px" }}>
-            <p style={{ fontWeight: "700", margin: "0 0 8px", color: "#111827" }}>
-              Original Statement:
-            </p>
-            <p
-              style={{
+  <div style={{
+            width: "100%",
+            maxWidth: "900px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "24px",
+          }}>
+
+            <div style={{ ...CARD, maxWidth: "700px", margin: 0 }}>
+              <p style={{ fontWeight: "700", margin: "0 0 8px", color: "#111827" }}>
+                Original Statement:
+              </p>
+              <p style={{
                 background: "#f9fafb",
                 border: "1px solid #e5e7eb",
                 borderRadius: "12px",
                 padding: "14px",
                 margin: 0,
                 color: "#374151",
-              }}
-            >
-              {item.statement}
-            </p>
-          </div>
+              }}>
+                {item.statement}
+              </p>
+            </div>
 
-          <div
-            style={{
+            <div style={{
               display: "flex",
               gap: "18px",
               width: "100%",
-              maxWidth: "780px",
-              marginBottom: "18px",
               alignItems: "stretch",
-            }}
-          >
-            <div style={{ ...CARD, flex: 1, maxWidth: "none" }}>
-              <h3 style={{ marginTop: 0, marginBottom: "12px", color: "#2563eb" }}>
-                Response A
-              </h3>
-
-              <p
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  margin: "0 0 8px",
-                  color: "#374151",
-                }}
-              >
-                LLM Response:
-              </p>
-
-              <p
-                style={{
+            }}>
+              <div style={{ ...CARD, flex: 1, maxWidth: "none", margin: 0 }}>
+                <h3 style={{ marginTop: 0, marginBottom: "12px", color: "#2563eb" }}>
+                  Response A
+                </h3>
+                <p style={{ fontSize: "13px", fontWeight: "700", margin: "0 0 8px", color: "#374151" }}>
+                  LLM Response:
+                </p>
+                <p style={{
                   background: "#eff6ff",
                   border: "1px solid #bfdbfe",
                   borderRadius: "10px",
@@ -592,53 +588,28 @@ function ExperimentPage({ onNext, uid, pid }) {
                   lineHeight: "1.6",
                   marginBottom: "18px",
                   color: "#374151",
-                }}
-              >
-                {item.responseA}
-              </p>
+                }}>
+                  {item.responseA}
+                </p>
+                <p style={{ fontSize: "13px", fontWeight: "700", margin: "0 0 10px", color: "#111827" }}>
+                  How persuasive is this response? (1-7)
+                </p>
+                <LikertScale
+                  value={ratingsA[current]}
+                  onChange={(val) => setRatingsA((prev) => ({ ...prev, [current]: val }))}
+                  leftLabel={"Not\nPersuasive"}
+                  rightLabel={"Very\nPersuasive"}
+                />
+              </div>
 
-              <p
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  margin: "0 0 10px",
-                  color: "#111827",
-                }}
-              >
-                How persuasive is this response? (1-7)
-              </p>
-
-              <LikertScale
-                value={ratingsA[current]}
-                onChange={(val) =>
-                  setRatingsA((prev) => ({
-                    ...prev,
-                    [current]: val,
-                  }))
-                }
-                leftLabel={"Not\nPersuasive"}
-                rightLabel={"Very\nPersuasive"}
-              />
-            </div>
-
-            <div style={{ ...CARD, flex: 1, maxWidth: "none" }}>
-              <h3 style={{ marginTop: 0, marginBottom: "12px", color: "#16a34a" }}>
-                Response B
-              </h3>
-
-              <p
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  margin: "0 0 8px",
-                  color: "#374151",
-                }}
-              >
-                LLM Response:
-              </p>
-
-              <p
-                style={{
+              <div style={{ ...CARD, flex: 1, maxWidth: "none", margin: 0 }}>
+                <h3 style={{ marginTop: 0, marginBottom: "12px", color: "#16a34a" }}>
+                  Response B
+                </h3>
+                <p style={{ fontSize: "13px", fontWeight: "700", margin: "0 0 8px", color: "#374151" }}>
+                  LLM Response:
+                </p>
+                <p style={{
                   background: "#f0fdf4",
                   border: "1px solid #bbf7d0",
                   borderRadius: "10px",
@@ -647,24 +618,13 @@ function ExperimentPage({ onNext, uid, pid }) {
                   lineHeight: "1.6",
                   marginBottom: "16px",
                   color: "#374151",
-                }}
-              >
-                {item.responseB}
-              </p>
-
-              <p
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  margin: "0 0 6px",
-                  color: "#111827",
-                }}
-              >
-                Thinking Process:
-              </p>
-
-              <p
-                style={{
+                }}>
+                  {item.responseB}
+                </p>
+                <p style={{ fontSize: "13px", fontWeight: "700", margin: "0 0 6px", color: "#111827" }}>
+                  Thinking Process:
+                </p>
+                <p style={{
                   background: "#fffbeb",
                   border: "1px solid #fde68a",
                   borderRadius: "10px",
@@ -673,80 +633,58 @@ function ExperimentPage({ onNext, uid, pid }) {
                   lineHeight: "1.6",
                   marginBottom: "16px",
                   color: "#374151",
-                }}
-              >
-                {item.thinkingB}
-              </p>
+                }}>
+                  {item.thinkingB}
+                </p>
+                <p style={{ fontSize: "13px", fontWeight: "700", margin: "0 0 10px", color: "#111827" }}>
+                  How persuasive is this response? (1-7)
+                </p>
+                <LikertScale
+                  value={ratingsB[current]}
+                  onChange={(val) => setRatingsB((prev) => ({ ...prev, [current]: val }))}
+                  leftLabel={"Not\nPersuasive"}
+                  rightLabel={"Very\nPersuasive"}
+                />
+              </div>
+            </div>
 
-              <p
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  margin: "0 0 10px",
-                  color: "#111827",
-                }}
-              >
-                How persuasive is this response? (1-7)
-              </p>
+            <div style={{ ...CARD, maxWidth: "700px", margin: 0, textAlign: "center" }}>
+              <h3 style={{ margin: "0 0 18px", color: "#111827" }}>
+                Which response would you choose?
+              </h3>
+              <div style={{ display: "flex", gap: "16px", justifyContent: "center" }}>
+                {["Response A", "Response B"].map((option) => {
+                  const isA = option === "Response A";
+                  const isChosen = preferred[current] === option;
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => setPreferred((prev) => ({ ...prev, [current]: option }))}
+                      style={{
+                        padding: "14px 32px",
+                        borderRadius: "12px",
+                        border: `2px solid ${isChosen ? (isA ? "#2563eb" : "#16a34a") : "#d1d5db"}`,
+                        background: isChosen ? (isA ? "#eff6ff" : "#f0fdf4") : "#fff",
+                        color: isA ? "#2563eb" : "#16a34a",
+                        fontSize: "16px",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-              <LikertScale
-                value={ratingsB[current]}
-                onChange={(val) =>
-                  setRatingsB((prev) => ({
-                    ...prev,
-                    [current]: val,
-                  }))
-                }
-                leftLabel={"Not\nPersuasive"}
-                rightLabel={"Very\nPersuasive"}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <NextButton
+                label={current === LLM_DATA.length - 1 ? "Continue to Post Survey" : "Next Question"}
+                onClick={handleNext}
               />
             </div>
-          </div>
 
-          <div style={{ ...CARD, textAlign: "center", marginBottom: "20px" }}>
-            <h3 style={{ margin: "0 0 18px", color: "#111827" }}>
-              Which response would you choose?
-            </h3>
-
-            <div style={{ display: "flex", gap: "16px", justifyContent: "center" }}>
-              {["Response A", "Response B"].map((option) => {
-                const isA = option === "Response A";
-                const isChosen = preferred[current] === option;
-
-                return (
-                  <button
-                    key={option}
-                    onClick={() =>
-                      setPreferred((prev) => ({
-                        ...prev,
-                        [current]: option,
-                      }))
-                    }
-                    style={{
-                      padding: "14px 32px",
-                      borderRadius: "12px",
-                      border: `2px solid ${
-                        isChosen ? (isA ? "#2563eb" : "#16a34a") : "#d1d5db"
-                      }`,
-                      background: isChosen ? (isA ? "#eff6ff" : "#f0fdf4") : "#fff",
-                      color: isA ? "#2563eb" : "#16a34a",
-                      fontSize: "16px",
-                      fontWeight: "700",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <NextButton
-              label={current === LLM_DATA.length - 1 ? "Continue to Post Survey" : "Next Question"}
-              onClick={handleNext}
-            />
           </div>
         </>
       )}
