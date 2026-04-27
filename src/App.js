@@ -14,9 +14,9 @@ const LIKERT_LABELS = {
 };
 
 const STATEMENT_POOL = [
-  "The United States does not produce the most oil in the world.",
-  "Climate change is primarily caused by human activity.”,
-  "Vaccines are safe and effective for most people.",
+  "The United States does not produce the most oil in the world.", 
+  "Climate change is primarily caused by human activity.",
+   "Vaccines are safe and effective for most people.",
 ];
   
 const STATES = [
